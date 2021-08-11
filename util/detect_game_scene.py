@@ -12,7 +12,7 @@ def show_img(img: np.ndarray):
     cv2.destroyAllWindows()
 
 
-def best_match(image: np.ndarray, template: np.ndarray, min_scale=0.2) -> Tuple[int, Tuple[int, int], Tuple[int, int]]:
+def best_match(image: np.ndarray, template: np.ndarray, min_scale=0.2, max_scale=1) -> Tuple[int, Tuple[int, int], Tuple[int, int]]:
     found = tuple()
     (tH, tW) = template.shape[:2]
     result = None
@@ -41,12 +41,12 @@ def best_match(image: np.ndarray, template: np.ndarray, min_scale=0.2) -> Tuple[
     return maxVal, (startX, startY), (endX, endY)
 
 
-def find_rough_coords(sct: mss.mss, template: np.ndarray) -> dict:
+def find_rough_coords(sct: mss.mss, template: np.ndarray, threshold=0.89) -> dict:
     while True:
         # take screenshot of entire screen
         screenshot = np.array(sct.grab({"top": 0, "left": 0, "width": 1920, "height": 1080}))
         found = best_match(screenshot[:, :, :3], template, 0.7)
-        if found[0] > 0.89:
+        if found[0] > threshold:
             print(found)
             cv2.rectangle(screenshot, *found[1:], (0, 255, 255), 2)
             print(" " * 100, end="\r")
