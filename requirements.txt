@@ -1,3 +1,4 @@
 opencv-python
 imutils
 mss
+pywin32
