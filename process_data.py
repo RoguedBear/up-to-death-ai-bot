@@ -6,7 +6,7 @@ Processing rules:
     - remove all data between `del` and `space` keys                ✔
     - remove all data between `del` and the previous `space` key    ✔
     - remove contiguous (1,2,3) recurring space or delete keys      ✔
-    - remove 1-1.5s prior data when encounter `space`
+    - remove 1-1.5s prior data (or when a previous "space" is encountered, whichever comes first) when encounter `space`
 
 What we doing now:
     - removing contigous spaces
@@ -51,12 +51,32 @@ def remove_contiguous_stuff(arr: np.ndarray, to_delete: str) -> np.ndarray:
     return index_of_spaces[indexes_of_spaces_to_delete]
 
 
-def find_del_space_pairs(keystrokes: np.ndarray) -> Tuple[Tuple[int, int]]:
+def find_del_space_pairs(keystrokes: np.ndarray) -> Tuple[Tuple[int, int], ...]:
     """Find del-space-del pairs or something like that. im not quite sure how."""
-    spaces: List[int] = np.where(keystrokes == " ")[0]
-    delete: List[int] = np.where(keystrokes == "del")[0]
-    pairs: List[int, int] = []
+    spaces: np.ndarray = np.where(keystrokes == " ")[0]
+    delete: np.ndarray = np.where(keystrokes == "del")[0]
+    pairs: List[Tuple[int, int]] = []
     # iterate and get intersection and pairs
+    print(delete, spaces)
+    if len(delete) == 1:
+        # use the property that the difference b/w numbers is the distance b/w numbers. so finding the index of the
+        # number having minimum distance, and then the index of number w/ 2nd big distance will give us the pair
+        first: Tuple[int, int]
+        second: Tuple[int, int]
+        min_index = np.abs(spaces - delete).argmin()
+        if spaces[min_index] < delete[0]:
+            first = spaces[min_index], delete[0]
+            second = delete[0], spaces[min_index + 1]
+        elif spaces[min_index] > delete[0]:
+            first = spaces[min_index - 1], delete[0]
+            second = spaces[min_index], delete[0]
+        else:
+            print("uh oh. something's going on here, you might wanna take a look....")
+            print("spaces:", spaces)
+            print("delete:", delete)
+            exit(1)
+        return first, second
+
     for i in range(len(delete) - 1):
         intersection = np.intersect1d(spaces[delete[i] < spaces], spaces[spaces < delete[i + 1]])[0]
         if not isinstance(intersection, np.int64):
