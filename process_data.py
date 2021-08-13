@@ -3,8 +3,8 @@ Processes keystrokes and images and then finally save them in an organised folde
 TODO:
     - concatenate data from multiple files from a folder
 Processing rules:
-    - remove all data between `del` and `space` keys
-    - remove all data between `del` and the previous `space` key
+    - remove all data between `del` and `space` keys                ✔
+    - remove all data between `del` and the previous `space` key    ✔
     - remove contiguous (1,2,3) recurring space or delete keys      ✔
     - remove 1-1.5s prior data when encounter `space`
 
@@ -15,9 +15,15 @@ What we doing now:
         - use diff and prepend with n[0] - 2
         - np.where(difference != 1)[0]
         - np.delete(keys, indexes[np.where(difference == 1)[0]])
+    - finding pairs of del and spaces
+        - custom for loop through del arrays
+        - find index of spaces b/w current delete index and next delete index
+            - if more than one spaces are found, exit the program
+            - other wise we have pairs
+
 
 """
-from typing import Tuple
+from typing import Tuple, List, Union
 
 import numpy as np
 
@@ -41,14 +47,31 @@ def remove_contiguous_stuff(arr: np.ndarray, to_delete: str) -> np.ndarray:
     # now get the indexes to freakin delete
     indexes_of_spaces_to_delete = np.where(differences == 1)[0]
 
-    # now delete
+    # now return
     return index_of_spaces[indexes_of_spaces_to_delete]
 
 
-def remove(keystroke: np.ndarray, time: np.ndarray, image: np.ndarray, indexes: np.ndarray) -> Tuple[
+def find_del_space_pairs(keystrokes: np.ndarray) -> Tuple[Tuple[int, int]]:
+    """Find del-space-del pairs or something like that. im not quite sure how."""
+    spaces: List[int] = np.where(keystrokes == " ")[0]
+    delete: List[int] = np.where(keystrokes == "del")[0]
+    pairs: List[int, int] = []
+    # iterate and get intersection and pairs
+    for i in range(len(delete) - 1):
+        intersection = np.intersect1d(spaces[delete[i] < spaces], spaces[spaces < delete[i + 1]])[0]
+        if not isinstance(intersection, np.int64):
+            print("ERROR! WARNING! ERROR! there are more than 2 spaces. ABORT!")
+            print(intersection)
+            exit(1)
+        pairs.append((delete[i], intersection))
+        pairs.append((intersection, delete[i + 1]))
+    return tuple(pairs)
+
+
+def remove(keystroke: np.ndarray, time: np.ndarray, image: np.ndarray, indexes: Union[np.ndarray, range]) -> Tuple[
     np.ndarray, np.ndarray, np.ndarray]:
     return np.delete(keystroke, indexes), \
-           np.delete(time, indexes),\
+           np.delete(time, indexes), \
            np.delete(image, indexes, axis=0)
 
 
@@ -69,4 +92,11 @@ if __name__ == '__main__':
     indexes = remove_contiguous_stuff(keys, " ")
     print(indexes)
     keys, time, img = remove(keys, time, img, indexes)
+    print("Len of key, time, img", len(keys), len(time), len(img))
+
+    # Test 2
+    print("-------------------------------")
+    pairs = find_del_space_pairs(keys)
+    for i,j in pairs:
+        keys, time, img = remove(keys, time, img, range(i, j))
     print("Len of key, time, img", len(keys), len(time), len(img))
