@@ -121,8 +121,9 @@ def process_data(keys: np.ndarray, time: np.ndarray, images: np.ndarray) -> Tupl
     # first filter the data to remove continuous spaces and del keys
     duplicated_space_indexes = remove_contiguous_stuff(keys, " ")
     keys, time, images = remove(keys, time, images, duplicated_space_indexes)
-    duplicated_space_indexes = remove_contiguous_stuff(keys, "del")
-    keys, time, images = remove(keys, time, images, duplicated_space_indexes)
+    if keys[keys == "del"].size > 0:
+        duplicated_space_indexes = remove_contiguous_stuff(keys, "del")
+        keys, time, images = remove(keys, time, images, duplicated_space_indexes)
     assert len(keys) == len(time) == len(images), f"Length is not same for key, time, img: {len(keys)}, {len(time)}, " \
                                                   f"{len(images)} "
     # delete space-del-space pairs
@@ -135,13 +136,13 @@ def process_data(keys: np.ndarray, time: np.ndarray, images: np.ndarray) -> Tupl
 
     # remove 1.5s prior data
     game_over_indexes: List[Tuple[int, int], ...] = []
-    for space_index in np.where(keys == " ")[1:]:  # don't consider first space
+    for space_index in np.where(keys == " ")[0][1:]:  # don't consider first space
         pair = remove_1s_data(time, space_index)
         game_over_indexes.append(pair)
 
-    to_delete = [list(range(x, y)) for x, y in game_over_indexes]
+    to_delete = [np.array(range(x, y)) for x, y in game_over_indexes]
 
-    keys, time, img = remove(keys, time, images, to_delete)
+    keys, time, images = remove(keys, time, images, np.concatenate(to_delete))
 
     assert len(keys) == len(time) == len(images), f"Length is not same for key, time, img: {len(keys)}, {len(time)}, " \
                                                   f"{len(images)} "
@@ -163,13 +164,13 @@ def generate_images(keys: np.ndarray, images: np.ndarray, game_number=0):
     for index, key in enumerate(keys):
         if key == "A":
             left_count += 1
-            path = f"images/left/data_{game_number}_left_{left_count}.png"
+            path = f"images/left/data_{game_number}_left_{left_count}_{index}.png"
         elif key == "D":
             right_count += 1
-            path = f"images/right/data_{game_number}_right_{right_count}.png"
+            path = f"images/right/data_{game_number}_right_{right_count}_{index}.png"
         elif key == None:
             nothing_count += 1
-            path = f"images/nothing/data_{game_number}_nothing_{nothing_count}.png"
+            path = f"images/nothing/data_{game_number}_nothing_{nothing_count}_{index}.png"
         else:
             continue
         success = imwrite(path, images[index])
