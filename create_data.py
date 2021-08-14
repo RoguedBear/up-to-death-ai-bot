@@ -24,8 +24,7 @@ def save(keystrokes: list, images: list):
         else:
             valid_name = True
             file_name = generate_file_name(file_name, count)
-    with open(file_name + "_key.txt", "w") as f:
-        f.write(str(keystrokes))
+
     np.save(file_name + "_img-bin.npz", images)
     np.save(file_name + "_keys.npz", keystrokes)
     print("saved. ", file_name)
@@ -35,7 +34,7 @@ sct = mss.mss()
 template = cv2.imread("screens/splashscreen1.png")
 
 print("Finding game screen...")
-# monitor = {'top': 238, 'left': 398, 'width': 388, 'height': 686}
+# monitor = {'top': 202, 'left': 6, 'width': 1221, 'height': 688}
 monitor = find_rough_coords(sct, template, 0.69)
 
 # fine tune
@@ -73,8 +72,22 @@ while True:
 
     # fail-safe
     if start - last_key_pressed >= 6:
-        print("WARNING: No input detected for the last 6 seconds!! exiting...")
+        print("WARNING: No input detected for the last 6 seconds!! you have choice now...")
         array_cleaner.remove_from_last_till(last_key_pressed, keystrokes, images)
+        print("Waiting for input.... (' '/h)")
+        continue_loop = True
+        while continue_loop:
+            keystroke = key_check()
+            if keystroke == "H":
+                print("exiting...")
+                break
+            elif keystroke == " ":
+                print("continuing loop...")
+                continue_loop = False
+                last_key_pressed = start
+                last_run_index = len(keystrokes)
+        else:
+            continue
         break
 
     # grace exit
@@ -83,8 +96,9 @@ while True:
 
     # delete last run
     if pressed_key == "del":
-        keystrokes[:] = keystrokes[:last_run_index]
-        images[:] = images[:last_run_index]
+        # dont worry, space is kept.
+        keystrokes[:] = keystrokes[:last_run_index + 1]
+        images[:] = images[:last_run_index + 1]
         print("discarded last run")
     # -------
 
@@ -112,5 +126,8 @@ while True:
     # -------
     print("\rFPS: ", round(1 / (time.time() - start), 0), end=" ")
 
+# start with a space, end with a space
+keystrokes.append((" ", start))
+images.append(image)
 cv2.destroyAllWindows()
 save(keystrokes, images)
