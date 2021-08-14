@@ -88,6 +88,21 @@ def find_del_space_pairs(keystrokes: np.ndarray) -> Tuple[Tuple[int, int], ...]:
     return tuple(pairs)
 
 
+def remove_1s_data(time: np.ndarray, index_of_space: np.int64) -> Tuple[int, int]:
+    """
+    Returns the index of data to be removed
+    PSEUDOCODE:
+        - store the difference from time - space
+        - filter by indexes whose difference is greater than -1.5s
+        - get the min value. that'll be the range to delete
+    """
+    time = time.astype(np.float64)
+    from_time = time[index_of_space]
+    difference = time - from_time
+    to_index = np.where(difference > -1.5)[0][0]
+    return to_index, int(index_of_space)
+
+
 def remove(keystroke: np.ndarray, time: np.ndarray, image: np.ndarray, indexes: Union[np.ndarray, range]) -> Tuple[
     np.ndarray, np.ndarray, np.ndarray]:
     return np.delete(keystroke, indexes), \
@@ -95,10 +110,15 @@ def remove(keystroke: np.ndarray, time: np.ndarray, image: np.ndarray, indexes: 
            np.delete(image, indexes, axis=0)
 
 
+def process_data(keys: np.ndarray, time: np.ndarray, images: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """The main function to process data and call every function known to mankind"""
+    pass
+
+
 if __name__ == '__main__':
     # first thing to do
-    x = np.load("data/sample_data_6_keys.npz.npy", allow_pickle=True)
-    img = np.load("data/sample_data_6_img-bin.npz.npy", allow_pickle=True)
+    x = np.load("data/sample_data_11_keys.npz.npy", allow_pickle=True)
+    img = np.load("data/sample_data_11_img-bin.npz.npy", allow_pickle=True)
     # replace None with null byte
     # keystokes = x[:, 0]
     # time = x[:, 1]
@@ -113,10 +133,25 @@ if __name__ == '__main__':
     print(indexes)
     keys, time, img = remove(keys, time, img, indexes)
     print("Len of key, time, img", len(keys), len(time), len(img))
+    print("for del:", np.where(keys == "del"))
 
     # Test 2
     print("-------------------------------")
     pairs = find_del_space_pairs(keys)
-    for i,j in pairs:
+    print("pairs: ", pairs)
+    for i, j in pairs:
         keys, time, img = remove(keys, time, img, range(i, j))
     print("Len of key, time, img", len(keys), len(time), len(img))
+
+    # Test 3
+    print("------------------------------")
+    time = time.astype(np.float64)
+    spaces = np.where(keys == " ")[0][1:]
+    print("spaces: ", spaces)
+    for spaces in spaces:
+        index = remove_1s_data(time, spaces)
+        print(index)
+        print("time difference of returned:", time[index[0]] - time[index[1]])
+        print("time difference of returned - 1:", time[index[0] - 1] - time[index[1]])
+
+    print("eee")
