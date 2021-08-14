@@ -2,6 +2,7 @@
 Processes keystrokes and images and then finally save them in an organised folder.
 TODO:
     - concatenate data from multiple files from a folder
+    - Convert None to either \0 null byte ot just "null"
 Processing rules:
     - remove all data between `del` and `space` keys                ✔
     - remove all data between `del` and the previous `space` key    ✔
@@ -23,9 +24,12 @@ What we doing now:
 
 
 """
+import os
+from glob import glob
 from typing import Tuple, List, Union
 
 import numpy as np
+from cv2.cv2 import imwrite
 
 
 def remove_contiguous_stuff(arr: np.ndarray, to_delete: str) -> np.ndarray:
@@ -103,7 +107,8 @@ def remove_1s_data(time: np.ndarray, index_of_space: np.int64) -> Tuple[int, int
     return to_index, int(index_of_space)
 
 
-def remove(keystroke: np.ndarray, time: np.ndarray, image: np.ndarray, indexes: Union[np.ndarray, range]) -> Tuple[
+def remove(keystroke: np.ndarray, time: np.ndarray, image: np.ndarray, indexes: Union[np.ndarray, range, List]) -> \
+Tuple[
     np.ndarray, np.ndarray, np.ndarray]:
     return np.delete(keystroke, indexes), \
            np.delete(time, indexes), \
@@ -112,46 +117,122 @@ def remove(keystroke: np.ndarray, time: np.ndarray, image: np.ndarray, indexes: 
 
 def process_data(keys: np.ndarray, time: np.ndarray, images: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """The main function to process data and call every function known to mankind"""
-    pass
+
+    # first filter the data to remove continuous spaces and del keys
+    duplicated_space_indexes = remove_contiguous_stuff(keys, " ")
+    keys, time, images = remove(keys, time, images, duplicated_space_indexes)
+    duplicated_space_indexes = remove_contiguous_stuff(keys, "del")
+    keys, time, images = remove(keys, time, images, duplicated_space_indexes)
+    assert len(keys) == len(time) == len(images), f"Length is not same for key, time, img: {len(keys)}, {len(time)}, " \
+                                                  f"{len(images)} "
+    # delete space-del-space pairs
+    pairs = find_del_space_pairs(keys)
+    for i, j in pairs:
+        keys, time, images = remove(keys, time, images, range(i, j))
+
+    assert len(keys) == len(time) == len(images), f"Length is not same for key, time, img: {len(keys)}, {len(time)}, " \
+                                                  f"{len(images)} "
+
+    # remove 1.5s prior data
+    game_over_indexes: List[Tuple[int, int], ...] = []
+    for space_index in np.where(keys == " ")[1:]:  # don't consider first space
+        pair = remove_1s_data(time, space_index)
+        game_over_indexes.append(pair)
+
+    to_delete = [list(range(x, y)) for x, y in game_over_indexes]
+
+    keys, time, img = remove(keys, time, images, to_delete)
+
+    assert len(keys) == len(time) == len(images), f"Length is not same for key, time, img: {len(keys)}, {len(time)}, " \
+                                                  f"{len(images)} "
+
+    return keys, time, images
+
+
+def generate_images(keys: np.ndarray, images: np.ndarray, game_number=0):
+    """Generates images from the processed npy data"""
+    for folder in ["left", "right", "nothing"]:
+        if not os.path.isdir("images/" + folder):
+            os.mkdir("images/" + folder)
+
+    left_count = 0
+    right_count = 0
+    nothing_count = 0
+    success = False
+    path = ""
+    for index, key in enumerate(keys):
+        if key == "A":
+            left_count += 1
+            path = f"images/left/data_{game_number}_left_{left_count}.png"
+        elif key == "D":
+            right_count += 1
+            path = f"images/right/data_{game_number}_right_{right_count}.png"
+        elif key == None:
+            nothing_count += 1
+            path = f"images/nothing/data_{game_number}_nothing_{nothing_count}.png"
+        else:
+            continue
+        success = imwrite(path, images[index])
+
+        assert success, "Failed to write: " + path
 
 
 if __name__ == '__main__':
-    # first thing to do
-    x = np.load("data/sample_data_11_keys.npz.npy", allow_pickle=True)
-    img = np.load("data/sample_data_11_img-bin.npz.npy", allow_pickle=True)
-    # replace None with null byte
-    # keystokes = x[:, 0]
-    # time = x[:, 1]
-    # x[:, 0][x[:, 0] == None] = "\0"
+    TEST = False
+    if TEST:
+        # first thing to do
+        x = np.load("data/sample_data_11_keys.npz.npy", allow_pickle=True)
+        img = np.load("data/sample_data_11_img-bin.npz.npy", allow_pickle=True)
+        # replace None with null byte
+        # keystokes = x[:, 0]
+        # time = x[:, 1]
+        # x[:, 0][x[:, 0] == None] = "\0"
 
-    # TEST
-    keys = x[:, 0]
-    time = x[:, 1]
+        # TEST
+        keys = x[:, 0]
+        time = x[:, 1]
 
-    print("Len of key, time, img", len(keys), len(time), len(img))
-    indexes = remove_contiguous_stuff(keys, " ")
-    print(indexes)
-    keys, time, img = remove(keys, time, img, indexes)
-    print("Len of key, time, img", len(keys), len(time), len(img))
-    print("for del:", np.where(keys == "del"))
+        print("Len of key, time, img", len(keys), len(time), len(img))
+        indexes = remove_contiguous_stuff(keys, " ")
+        print(indexes)
+        keys, time, img = remove(keys, time, img, indexes)
+        print("Len of key, time, img", len(keys), len(time), len(img))
+        print("for del:", np.where(keys == "del"))
 
-    # Test 2
-    print("-------------------------------")
-    pairs = find_del_space_pairs(keys)
-    print("pairs: ", pairs)
-    for i, j in pairs:
-        keys, time, img = remove(keys, time, img, range(i, j))
-    print("Len of key, time, img", len(keys), len(time), len(img))
+        # Test 2
+        print("-------------------------------")
+        pairs = find_del_space_pairs(keys)
+        print("pairs: ", pairs)
+        for i, j in pairs:
+            keys, time, img = remove(keys, time, img, range(i, j))
+        print("Len of key, time, img", len(keys), len(time), len(img))
 
-    # Test 3
-    print("------------------------------")
-    time = time.astype(np.float64)
-    spaces = np.where(keys == " ")[0][1:]
-    print("spaces: ", spaces)
-    for spaces in spaces:
-        index = remove_1s_data(time, spaces)
-        print(index)
-        print("time difference of returned:", time[index[0]] - time[index[1]])
-        print("time difference of returned - 1:", time[index[0] - 1] - time[index[1]])
+        # Test 3
+        print("------------------------------")
+        time = time.astype(np.float64)
+        spaces = np.where(keys == " ")[0][1:]
+        print("spaces: ", spaces)
+        for spaces in spaces:
+            index = remove_1s_data(time, spaces)
+            print(index)
+            print("time difference of returned:", time[index[0]] - time[index[1]])
+            print("time difference of returned - 1:", time[index[0] - 1] - time[index[1]])
 
-    print("eee")
+        print("eee")
+
+    keys = glob("data/*keys.npz.npy")
+    images = glob("data/*bin.npz.npy")
+    keys.sort()
+    images.sort()
+
+    print(keys, "\n", images)
+    for index, file in enumerate(zip(keys, images)):
+        print("Processing: ", file[0][5:-8])
+        x = np.load(file[0], allow_pickle=True)
+        img = np.load(file[1], allow_pickle=True)
+        keys = x[:, 0]
+        time = x[:, 1]
+        print("original length:", len(img), len(keys), len(time))
+        print("------------------------------")
+        keys, time, img = process_data(keys, time, img)
+        generate_images(keys, img)
