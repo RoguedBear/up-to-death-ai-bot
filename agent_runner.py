@@ -20,7 +20,7 @@ pathlib.PosixPath = pathlib.WindowsPath
 def label_func(x): return x.parent.name
 
 print("Loading model...")
-model = load_learner("test2_12k_0.16.pkl")
+model = load_learner("test3_15k_0.15.pkl")
 
 sct = mss.mss()
 template = cv2.imread("screens/splashscreen1.png")
@@ -57,11 +57,11 @@ while True:
     # ----
 
     # convert to b/w
-    cv2.cvtColor(image, cv2.COLOR_BGR2GRAY, image)
-    # run canny detection
-    image = cv2.Canny(image, 157, 287)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     # resize to 224x224
     image = cv2.resize(image, (224, 224))
+    # run canny detection
+    image = cv2.Canny(image, 167, 287)
 
     # show preview
     cv2.imshow("preview", image)

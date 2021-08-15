@@ -104,11 +104,11 @@ while True:
     # -------
 
     # convert to b/w
-    cv2.cvtColor(image, cv2.COLOR_BGR2GRAY, image)
-    # run canny detection
-    image = cv2.Canny(image, 157, 287)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     # resize to 224x224
     image = cv2.resize(image, (224, 224))
+    # run canny detection
+    image = cv2.Canny(image, 167, 287)
 
     # show preview
     cv2.imshow("preview", image)

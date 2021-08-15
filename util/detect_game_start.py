@@ -101,13 +101,15 @@ if __name__ == '__main__':
             monitor = fine_tune(np.array(image), monitor.copy())
             found = True
         if not found:
-            smal_preview = imutils.resize(np.array(image), width=int(image.size[0] * 0.4))
+            smal_preview = imutils.resize(
+                np.array(image), width=int(image.size[0] * 0.4))
         else:
             smal_preview = image
+        smal_preview = cv2.resize(np.array(smal_preview), (224, 224))
         smal_preview = cv2.cvtColor(np.array(smal_preview), cv2.COLOR_BGR2GRAY)
-        # threshold1 = cv2.getTrackbarPos("threshold1", "output")
-        # threshold2 = cv2.getTrackbarPos("threshold2", "output")
-        # smal_preview = cv2.Canny(smal_preview, threshold1, threshold2)
+        threshold1 = cv2.getTrackbarPos("threshold1", "output")
+        threshold2 = cv2.getTrackbarPos("threshold2", "output")
+        smal_preview = cv2.Canny(smal_preview, threshold1, threshold2)
         cv2.imshow("preview", smal_preview)
         cv2.waitKey(1)
         # if found:
