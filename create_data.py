@@ -19,7 +19,7 @@ def save(keystrokes: list, images: list):
     count = 0
     valid_name = False
     while valid_name is False:
-        if os.path.isfile(generate_file_name(file_name, count)+ "_key.txt"):
+        if os.path.isfile(generate_file_name(file_name, count) + "_keys.npz.npy"):
             count += 1
         else:
             valid_name = True
@@ -73,7 +73,8 @@ while True:
     # fail-safe
     if start - last_key_pressed >= 6:
         print("WARNING: No input detected for the last 6 seconds!! you have choice now...")
-        array_cleaner.remove_from_last_till(last_key_pressed, keystrokes, images)
+        array_cleaner.remove_from_last_till(
+            last_key_pressed, keystrokes, images)
         print("Waiting for input.... (' '/h)")
         continue_loop = True
         while continue_loop:
