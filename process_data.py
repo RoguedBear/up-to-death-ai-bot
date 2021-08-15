@@ -142,7 +142,7 @@ def process_data(keys: np.ndarray, time: np.ndarray, images: np.ndarray) -> Tupl
 
     to_delete = [np.array(range(x, y)) for x, y in game_over_indexes]
 
-    keys, time, images = remove(keys, time, images, np.concatenate(to_delete))
+    keys, time, images = remove(keys, time, images, np.concatenate(to_delete).astype(np.int64))
 
     assert len(keys) == len(time) == len(images), f"Length is not same for key, time, img: {len(keys)}, {len(time)}, " \
                                                   f"{len(images)} "
