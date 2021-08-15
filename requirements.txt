@@ -2,3 +2,5 @@ opencv-python
 imutils
 mss
 pywin32
+fastai
+keyboard
