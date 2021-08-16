@@ -127,12 +127,13 @@ def process_data(keys: np.ndarray, time: np.ndarray, images: np.ndarray) -> Tupl
     assert len(keys) == len(time) == len(images), f"Length is not same for key, time, img: {len(keys)}, {len(time)}, " \
                                                   f"{len(images)} "
     # delete space-del-space pairs
-    pairs = find_del_space_pairs(keys)
-    for i, j in pairs:
-        keys, time, images = remove(keys, time, images, range(i, j))
+    if keys[keys == "del"].size > 0:
+        pairs = find_del_space_pairs(keys)
+        to_delete = [np.array(range(i, j)) for i, j in pairs]
+        keys, time, images = remove(keys, time, images, np.concatenate(to_delete).astype(np.int64))
 
-    assert len(keys) == len(time) == len(images), f"Length is not same for key, time, img: {len(keys)}, {len(time)}, " \
-                                                  f"{len(images)} "
+        assert len(keys) == len(time) == len(images), f"Length is not same for key, time, img: {len(keys)}, " \
+                                                      f"{len(time)}, {len(images)} "
 
     # remove 1.5s prior data
     game_over_indexes: List[Tuple[int, int], ...] = []
