@@ -81,14 +81,17 @@ def find_del_space_pairs(keystrokes: np.ndarray) -> Tuple[Tuple[int, int], ...]:
             exit(1)
         return first, second
 
-    for i in range(len(delete) - 1):
-        intersection = np.intersect1d(spaces[delete[i] < spaces], spaces[spaces < delete[i + 1]])[0]
-        if not isinstance(intersection, np.int64):
-            print("ERROR! WARNING! ERROR! there are more than 2 spaces. ABORT!")
-            print(intersection)
-            exit(1)
-        pairs.append((delete[i], intersection))
-        pairs.append((intersection, delete[i + 1]))
+    for i in range(1, len(spaces) - 1):
+        intersection = np.intersect1d(delete[spaces[i] < delete], delete[delete < spaces[i + 1]])
+        if intersection.size > 0:
+            intersection = intersection[0]
+            if not isinstance(intersection, np.int64):
+                print("ERROR! WARNING! ERROR! there are more than 2 delete in between space. ABORT!")
+                print(intersection)
+                exit(1)
+            # pairs.append((spaces[i], intersection)) --- commented out because we're already deleting space-del
+            # #Repetition #NoFilters #SaveEarth #Windy4Cybersec #WINDYAPPROVES!!!!
+            pairs.append((intersection, spaces[i + 1]))
     return tuple(pairs)
 
 
@@ -129,6 +132,7 @@ def process_data(keys: np.ndarray, time: np.ndarray, images: np.ndarray) -> Tupl
     # delete space-del-space pairs
     if keys[keys == "del"].size > 0:
         pairs = find_del_space_pairs(keys)
+        print("pairs of del:", pairs)
         to_delete = [np.array(range(i, j)) for i, j in pairs]
         keys, time, images = remove(keys, time, images, np.concatenate(to_delete).astype(np.int64))
 
@@ -177,14 +181,16 @@ def generate_images(keys: np.ndarray, images: np.ndarray, game_number=0):
         success = imwrite(path, images[index])
 
         assert success, "Failed to write: " + path
+    print("total images:", len(images))
+    print("no of images output:", left_count + right_count + nothing_count)
 
 
 if __name__ == '__main__':
     TEST = False
     if TEST:
         # first thing to do
-        x = np.load("data/sample_data_11_keys.npz.npy", allow_pickle=True)
-        img = np.load("data/sample_data_11_img-bin.npz.npy", allow_pickle=True)
+        x = np.load("data/sample_data_2_keys.npz.npy", allow_pickle=True)
+        img = np.load("data/sample_data_2_img-bin.npz.npy", allow_pickle=True)
         # replace None with null byte
         # keystokes = x[:, 0]
         # time = x[:, 1]
@@ -203,6 +209,8 @@ if __name__ == '__main__':
 
         # Test 2
         print("-------------------------------")
+        indexes = remove_contiguous_stuff(keys, "del")
+        keys, time, img = remove(keys, time, img, indexes)
         pairs = find_del_space_pairs(keys)
         print("pairs: ", pairs)
         for i, j in pairs:
@@ -222,19 +230,20 @@ if __name__ == '__main__':
 
         print("eee")
 
-    keys = glob("data/*keys.npz.npy")
-    images = glob("data/*bin.npz.npy")
-    keys.sort()
-    images.sort()
+    if not TEST:
+        keys = glob("data/*keys.npz.npy")
+        images = glob("data/*bin.npz.npy")
+        keys.sort()
+        images.sort()
 
-    print(keys, "\n", images)
-    for index, file in enumerate(zip(keys, images)):
-        print("Processing: ", file[0][5:-8])
-        x = np.load(file[0], allow_pickle=True)
-        img = np.load(file[1], allow_pickle=True)
-        keys = x[:, 0]
-        time = x[:, 1]
-        print("original length:", len(img), len(keys), len(time))
-        print("------------------------------")
-        keys, time, img = process_data(keys, time, img)
-        generate_images(keys, img)
+        print(keys, "\n", images)
+        for index, file in enumerate(zip(keys, images)):
+            print("Processing: ", file[0][5:-8])
+            x = np.load(file[0], allow_pickle=True)
+            img = np.load(file[1], allow_pickle=True)
+            keys = x[:, 0]
+            time = x[:, 1]
+            print("original length:", len(img), len(keys), len(time))
+            print("------------------------------")
+            keys, time, img = process_data(keys, time, img)
+            generate_images(keys, img)
