@@ -1,6 +1,5 @@
 import pathlib
 import time
-
 import keyboard
 import mss
 import numpy as np
@@ -20,7 +19,7 @@ pathlib.PosixPath = pathlib.WindowsPath
 def label_func(x): return x.parent.name
 
 print("Loading model...")
-model = load_learner("test3_15k_0.15.pkl")
+model = load_learner("test3y_52k_0.10_0.211372_r34.pkl")
 
 sct = mss.mss()
 template = cv2.imread("screens/splashscreen1.png")

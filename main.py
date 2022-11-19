@@ -1,5 +1,4 @@
 from time import sleep
-
 import mss
 import numpy as np
 from cv2 import cv2
