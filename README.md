@@ -34,7 +34,9 @@ score of 14 after many tries
 We were also observed that the model exhibited our gameplay styles and sometimes
 that showed up uniquely such as Ya-s-h's "wiggling left and right" tactic
 
-<!-- TODO: INSERT VIDEO -->
+
+https://user-images.githubusercontent.com/39442192/210065183-862674bc-c418-47dd-b891-736d20eb867e.mp4
+
 
 you can find the colab file used to train the model on their video:
 [FastAI learns to play Fall Guys](https://youtu.be/GS_0ZKzrvk0)
