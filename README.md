@@ -34,14 +34,14 @@ score of 14 after many tries
 We were also observed that the model exhibited our gameplay styles and sometimes
 that showed up uniquely such as Ya-s-h's "wiggling left and right" tactic
 
-
 https://user-images.githubusercontent.com/39442192/210065183-862674bc-c418-47dd-b891-736d20eb867e.mp4
-
 
 you can find the colab file used to train the model on their video:
 [FastAI learns to play Fall Guys](https://youtu.be/GS_0ZKzrvk0)
 
 ## Credits
 
-- Rachit, for creating the game
-- ClarityCoders for sparking the idea
+- Rachit, for creating the game \
+  ([itch.io](https://itch.io/profile/rachit-vasudeva))
+- ClarityCoders for sparking the idea \
+  ([youtube](https://www.youtube.com/@ClarityCoders), [GitHub](https://github.com/ClarityCoders))
